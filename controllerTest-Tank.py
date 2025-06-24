@@ -16,8 +16,10 @@ class JoyStick:
     def __init__(self, id):
         self.jsobject = pygame.joystick.Joystick(id)
         self.jsobject.init()
+        self.name = self.jsobject.get_name()
 
     def update(self):
+        # Mappings are shown according to the 8BitDo SN30 Pro
         self.axes = [self.jsobject.get_axis(x) for x in range(self.jsobject.get_numaxes())]
         self.axesmap = ['L X', 'L Y', 'LT', 'R X', 'R Y', 'RT']
         self.buttons = [self.jsobject.get_button(x) for x in range(self.jsobject.get_numbuttons())]
@@ -28,37 +30,41 @@ class JoyStick:
 try:
     controller = JoyStick(0)
 
-    # 
+    # Our main logic loop
     while True:
         pygame.event.pump()
         controller.update()
         
         # Motor Logic
-        speeds = [round(controller.axes[0] * 100) * -1, round(controller.axes[1] * 100) * -1]
+        speeds = [round(controller.axes[1] * 100), round(controller.axes[4] * 100) * -1]
         deadzone = 5
 
+        # Setting left motor speed
         if speeds[0] <= deadzone and speeds[0] >= (-1 * deadzone):
             speeds[0] = 0
             motors[0].stop()
         else:
             motors[0].start(speeds[0])
 
+        # Setting right motor speed
         if speeds[1] <= deadzone and speeds[1] >= (-1 * deadzone):
             speeds[1] = 1
             motors[1].stop()
         else:
             motors[1].start(speeds[1])
         
-        print(controller.axes, controller.buttons, controller.hats, [motor.get_speed() for motor in motors], speeds)
+        # This is what shows us all the information in the terminal
+        print(controller.name, controller.axes, controller.buttons, controller.hats, [motor.get_speed() for motor in motors], speeds)
         
         matrix.clear() # Wipe the matrix display
         matrix.set_pixel(tuple([x + 1 for x in controller.hats[0]]), ('yellow', 10)) # Sets a yellow light corresponding with d-pad coordinates
 
+        # Set a matrix light according to a button press
         if controller.buttons[1]:
             matrix.set_pixel((1,1), ('red', 10), display=True)
         else:
             matrix.set_pixel((1,1), ('red', 0), display=True)
-        clock.tick(100)
+        clock.tick(1000)
 except KeyboardInterrupt:
     print("Quitting...")
 except pygame.error:
