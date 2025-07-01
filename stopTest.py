@@ -1,13 +1,11 @@
 # Imports
 import pygame
 from buildhat import Motor, ColorSensor, Matrix
-from gpiozero import LED as Horn
-from time import sleep
 
 # Connecting accessories before we boot up Pygame
-horn = Horn(13)
 matrix = Matrix('B')
 motors = [Motor('C'), Motor('D')]
+color = ColorSensor('A')
 
 # Pygame setup
 pygame.init()
@@ -39,6 +37,7 @@ try:
         controller.update()
         
         # Motor Logic
+        current = color.get_color()
         speed = round(controller.axes[1] * 100)
         direction = round(controller.axes[0] * -100)
         if abs(speed) + abs(direction) > 100:
@@ -46,7 +45,9 @@ try:
         deadzone = 5
 
         # Setting motor speeds
-        if (speed <= deadzone and speed >= (-1 * deadzone)) and (direction <= deadzone and direction >= (-1 * deadzone)): # Deadzone consideration
+        if current == "red":
+            print("I see red!")
+        elif (speed <= deadzone and speed >= (-1 * deadzone)) and (direction <= deadzone and direction >= (-1 * deadzone)): # Deadzone consideration
             # If your stick is within the deadzone, the inputs will be nullified and the robot will stop
             speed = 0
             direction = 0
@@ -65,9 +66,6 @@ try:
         # Set a matrix light according to a button press
         if controller.buttons[1]:
             matrix.set_pixel((1,1), ('red', 10), display=True)
-            horn.on()
-            sleep(0.001)
-            horn.off()
         else:
             matrix.set_pixel((1,1), ('red', 0), display=True)
         clock.tick(1000)
